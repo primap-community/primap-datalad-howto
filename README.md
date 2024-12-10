@@ -1,5 +1,15 @@
 # PRIMAP datalad repositories
 
+## Table of Contents
+
+* [PRIMAP datalad repositories](#primap-datalad-repositories)
+   * [Overview](#overview)
+   * [One-time cloudflare setup](#one-time-cloudflare-setup)
+      * [For internal developers](#for-internal-developers)
+      * [For external collaborators](#for-external-collaborators)
+   * [Create a new repository](#create-a-new-repository)
+   * [Move an existing repository to R2](#move-an-existing-repository-to-r2)
+
 ## Overview
 
 We're hosting primap datasets using github for metadata storage
