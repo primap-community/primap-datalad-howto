@@ -273,9 +273,9 @@ datalad push --to $github_sibling_name
 
 ## Add an existing R2 sibling to your local repository
 
-If someone already set up the R2 sibling, we still need 
-to add it to our local repository. When we pull from GitHub our local repository
-is already aware of the sibling, but we might not be able to see it yet.
+If someone already set up the R2 remote, we still need 
+to enable the sibling in our local repository. Our local repository
+should be already aware of the sibling, but we might not be able to see it yet.
 
 First we check if the R2 sibling has already been added with:
 
@@ -283,7 +283,8 @@ First we check if the R2 sibling has already been added with:
 git annex whereis path/to/some/file
 ```
 
-Choose a file that ist stored in the datalad remote (e.g. .nc or .csv files). We should now see a list of remotes where the file is stored. One of them will have the name `public-r2`
+Choose a file that ist stored in the datalad remote (e.g. `.nc` or `.csv` files). We should now see a list of remotes 
+where the file is stored. One of them will have the name `public-r2`
 and show the url of the R2 bucket. Note that it could also have another name, if the remote wasn't set up
 as described above.
 
@@ -293,13 +294,7 @@ If the command does nothing we can try the same for all files and interrupt the 
 git annex whereis
 ```
 
-If we want to see the name of the bucket we can use:
-
-```shell
-git show git-annex:remote.log
-```
-
-We can now activate the sibling with:
+If `public-r2` is in the list of available remotes, we can activate the sibling with:
 
 ```shell
 datalad siblings enable -s public-r2
@@ -311,4 +306,10 @@ We can now list all the activated siblings with:
 datalad siblings
 ```
 
-The result should show the `public-r2` sibling
+The result should show the `public-r2` sibling.
+
+If we want to see the name of the bucket we can use:
+
+```shell
+git show git-annex:remote.log
+```
