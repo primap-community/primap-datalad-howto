@@ -283,7 +283,7 @@ First we check if the R2 sibling has already been added with:
 git annex whereis path/to/some/file
 ```
 
-Choose a file that ist stored in the datalad remote (e.g. `.nc` or `.csv` files). We should now see a list of remotes 
+Choose a file that is stored in the datalad remote (e.g. `.nc` or `.csv` files). We should now see a list of remotes 
 where the file is stored. One of them will have the name `public-r2`
 and show the url of the R2 bucket. Note that it could also have another name, if the remote wasn't set up
 as described above.
