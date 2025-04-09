@@ -9,6 +9,7 @@
       * [For external collaborators](#for-external-collaborators)
    * [Create a new repository](#create-a-new-repository)
    * [Move an existing datalad repository to R2](#move-an-existing-datalad-repository-to-r2)
+   * [Move an existing git repository to R2](#move-an-existing-git-repository-to-r2)
    * [Add an existing R2 sibling to your local repository](#add-an-existing-r2-sibling-to-your-local-repository)
 
 ## Overview
@@ -309,7 +310,7 @@ First, we need to initialise our dataset with:
 datalad create -c cfg_text2git $name
 ```
 If we expect to have large CSV files, we need to ensure that the CSV files are stored in the git-annex
-by adding this line to the `.gitattributes` file, which should ne in the root directory of the repository.
+by adding this line to the `.gitattributes` file, which should be in the root directory of the repository:
 
 `*.csv annex.largefiles=anything`
 
