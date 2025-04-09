@@ -214,8 +214,9 @@ public access:
 13. Copy the "Public R2.dev Bucket URL", you'll need it later.
 
 Now, we'll add R2 as a sibling (i.e. publication target) to the existing datalad repository.
-We have to use git-annex directly to do this. If you add a bucket with public access,
-use:
+We have to use git-annex directly to do this. 
+
+If you add a bucket with **public access**, use:
 ```shell
 primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
 git annex initremote public-r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
@@ -224,6 +225,15 @@ git annex initremote public-r2 type=S3 encryption=none signature=v4 region=auto 
     host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com \
     publicurl=$publicurl
 ```
+If you add a bucket with **private access**, use:
+```shell
+primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
+git annex initremote r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
+    autoenable=true \
+    bucket=primap-datalad-$name \
+    host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com
+```
+
 where you replace `$name` by the dataset name like `unfccc-di` and `$publicurl` by the
 public URL you copied when creating the cloudflare R2 bucket. If you didn't copy it,
 you can find it on the bucket's page in the settings under the heading "Public Access"
@@ -239,19 +249,20 @@ Now, the output of `datalad siblings` should look like this:
 .: ginhemio-storage(+) [https://gin.hemio.de/CR/unfcc_di_data (git)]
 .: ginhemio(+) [https://gin.hemio.de/CR/unfcc_di_data (git)]
 ```
+Your r2 remote will be called "public-r2" or "r2". 
 Note that your github sibling might not be named "origin" and you might not have
 the "datalad-archives" sibling at all and you might only have one of "ginhemio" and
-"ginhemio-storage". This all depends on the prior hosting history of the dataset and
+"ginhemio-storage".  This all depends on the prior hosting history of the dataset and
 might therefore differ between datasets. Important is only that you at this stage still
 have one ginhemio sibling and the github sibling.
 
 Now, we'll add a publication dependency on public-r2 to the github remote and remove
 the publication dependency on ginhemio:
 ```shell
-datalad siblings configure -s $github_sibling_name --publish-depends public-r2
+datalad siblings configure -s $github_sibling_name --publish-depends $r2_name
 ```
 Replace `$github_sibling_name` with the name of your github sibling (usually, `github`
-or `origin`).
+or `origin`). Replace `$r2_name` with the name of the R2 sibling (`public-r2` or `r2`).
 
 Now, push the dataset to github, which will automatically push to R2 as well
 because we configured it as a publication dependency. This might take a while because
@@ -268,10 +279,12 @@ datalad siblings remove -s ginhemio-storage
 if you only have one ginhemio sibling, only remove this one. Also, we have to tell
 git-annex to never enable the storage sibling and not try to fetch data from ginhemio
 any more:
+
 ```shell
 git annex configremote ginhemio-storage autoenable=false
 git annex dead ginhemio-storage
 ```
+
 and push the results again:
 ```shell
 datalad push --to $github_sibling_name
@@ -314,10 +327,13 @@ by adding this line to the `.gitattributes` file, which should be in the root di
 
 `*.csv annex.largefiles=anything`
 
+If the files we want to push to the R2 bucket are excluded by the `.gitignore` file, we need to
+remove the lines that exclude them.
 
 Now, we'll add R2 as a sibling (i.e. publication target) to the existing datalad repository.
-We have to use git-annex directly to do this. If you add a bucket with public access,
-use:
+We have to use git-annex directly to do this.
+
+If you add a bucket with **public access**, use:
 ```shell
 primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
 git annex initremote public-r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
@@ -326,6 +342,16 @@ git annex initremote public-r2 type=S3 encryption=none signature=v4 region=auto 
     host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com \
     publicurl=$publicurl
 ```
+If you add a bucket with **private access**, use:
+
+```shell
+primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
+git annex initremote r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
+    autoenable=true \
+    bucket=primap-datalad-$name \
+    host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com
+```
+
 where you replace `$name` by the dataset name like `unfccc-di` and `$publicurl` by the
 public URL you copied when creating the cloudflare R2 bucket. If you didn't copy it,
 you can find it on the bucket's page in the settings under the heading "Public Access"
@@ -337,44 +363,19 @@ Now, the output of `datalad siblings` should look like this:
 .: here(+) [git]
 .: public-r2(+) [git]
 .: origin(-) [https://github.com/mikapfl/unfccc_di_data.git (git)]
-.: datalad-archives(+) [datalad-archives]
-.: ginhemio-storage(+) [https://gin.hemio.de/CR/unfcc_di_data (git)]
-.: ginhemio(+) [https://gin.hemio.de/CR/unfcc_di_data (git)]
 ```
-Note that your github sibling might not be named "origin" and you might not have
-the "datalad-archives" sibling at all and you might only have one of "ginhemio" and
-"ginhemio-storage". This all depends on the prior hosting history of the dataset and
-might therefore differ between datasets. Important is only that you at this stage still
-have one ginhemio sibling and the github sibling.
+Note that your github sibling might not be named "origin" and your r2 remote will be called "public-r2" or "r2".  
 
-Now, we'll add a publication dependency on public-r2 to the github remote and remove
-the publication dependency on ginhemio:
+Now, we'll add a publication dependency on r2 to the github remote:
 ```shell
-datalad siblings configure -s $github_sibling_name --publish-depends public-r2
+datalad siblings configure -s $github_sibling_name --publish-depends $r2_name
 ```
 Replace `$github_sibling_name` with the name of your github sibling (usually, `github`
-or `origin`).
+or `origin`). Replace `$r2_name` with the name of the R2 sibling (`public-r2` or `r2`).
 
 Now, push the dataset to github, which will automatically push to R2 as well
 because we configured it as a publication dependency. This might take a while because
 it transfers all data:
-```shell
-datalad push --to $github_sibling_name
-```
-
-Finally, remove the obsolete ginhemio siblings:
-```shell
-datalad siblings remove -s ginhemio
-datalad siblings remove -s ginhemio-storage
-```
-if you only have one ginhemio sibling, only remove this one. Also, we have to tell
-git-annex to never enable the storage sibling and not try to fetch data from ginhemio
-any more:
-```shell
-git annex configremote ginhemio-storage autoenable=false
-git annex dead ginhemio-storage
-```
-and push the results again:
 ```shell
 datalad push --to $github_sibling_name
 ```
