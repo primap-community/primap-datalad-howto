@@ -138,13 +138,15 @@ Now, create your datalad repository. In the terminal, navigate to the location w
 you want your local clone of the datalad repository (without creating the new directory
 yet). Run:
 ```shell
-datalad create -c cfg_text2git $name
+datalad create -c text2git $name
 cd $name
 ```
 where you replace `$name` by the dataset name like `unfccc-di`.
 
 Next, we'll add R2 as a sibling (i.e. publication target) to the new datalad repository.
-We have to use git-annex directly to do this. If you add a bucket with public access,
+We have to use git-annex directly to do this.
+
+If you add a bucket with **public access**,
 use:
 ```shell
 primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
@@ -154,6 +156,16 @@ git annex initremote public-r2 type=S3 encryption=none signature=v4 region=auto 
     host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com \
     publicurl=$publicurl
 ```
+
+If you add a bucket with **private access**, use:
+```shell
+primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
+git annex initremote r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
+    autoenable=true \
+    bucket=primap-datalad-$name \
+    host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com
+```
+
 where you replace `$name` by the dataset name like `unfccc-di` and `$publicurl` by the
 public URL you copied when creating the cloudflare R2 bucket. If you didn't copy it,
 you can find it on the bucket's page in the settings under the heading "Public Access"
@@ -259,16 +271,26 @@ have one ginhemio sibling and the github sibling.
 Now, we'll add a publication dependency on public-r2 to the github remote and remove
 the publication dependency on ginhemio:
 ```shell
-datalad siblings configure -s $github_sibling_name --publish-depends $r2_name
+datalad siblings configure -s $github_sibling_name --publish-depends $r2_sibling_name
 ```
 Replace `$github_sibling_name` with the name of your github sibling (usually, `github`
-or `origin`). Replace `$r2_name` with the name of the R2 sibling (`public-r2` or `r2`).
+or `origin`). Replace `$r2_sibling_name` with the name of the R2 sibling (`public-r2` or `r2`).
 
-Now, push the dataset to github, which will automatically push to R2 as well
+**Option A: If we are confident that all the files are stored on disc**,
+we can **push** the dataset to github, which will automatically push to R2 as well,
 because we configured it as a publication dependency. This might take a while because
 it transfers all data:
+
 ```shell
 datalad push --to $github_sibling_name
+```
+**Option B: If some files are only on a remote** (they are symlinks on our local machine),
+we could either download and the upload again
+(`datalad get .` and `datalad push --to $github_sibling_name`) or we can use git-annex 
+directly to **copy** the files (faster for large data sets):
+
+```shell
+git annex copy --to $r2_sibling_name --from-anywhere --all
 ```
 
 Finally, remove the obsolete ginhemio siblings:
@@ -320,7 +342,7 @@ public access:
 First, we need to initialise our dataset with:
 
 ```shell
-datalad create -c cfg_text2git $name
+datalad create -c text2git $name
 ```
 If we expect to have large CSV files, we need to ensure that the CSV files are stored in the git-annex
 by adding this line to the `.gitattributes` file, which should be in the root directory of the repository:
@@ -368,18 +390,27 @@ Note that your github sibling might not be named "origin" and your r2 remote wil
 
 Now, we'll add a publication dependency on r2 to the github remote:
 ```shell
-datalad siblings configure -s $github_sibling_name --publish-depends $r2_name
+datalad siblings configure -s $github_sibling_name --publish-depends $r2_sibling_name
 ```
 Replace `$github_sibling_name` with the name of your github sibling (usually, `github`
 or `origin`). Replace `$r2_name` with the name of the R2 sibling (`public-r2` or `r2`).
 
-Now, push the dataset to github, which will automatically push to R2 as well
+**Option A: If we are confident that all the files are stored on disc**,
+we can **push** the dataset to github, which will automatically push to R2 as well,
 because we configured it as a publication dependency. This might take a while because
 it transfers all data:
+
 ```shell
 datalad push --to $github_sibling_name
 ```
+**Option B: If some files are only on a remote** (they are symlinks on our local machine),
+we could either download and the upload again
+(`datalad get .` and `datalad push --to $github_sibling_name`) or we can use git-annex 
+directly to **copy** the files (faster for large data sets):
 
+```shell
+git annex copy --to $r2_sibling_name --from-anywhere --all
+```
 ## Add an existing R2 sibling to your local repository
 
 If someone already set up the R2 remote, we still need 
@@ -422,3 +453,29 @@ If we want to see the name of the bucket we can use:
 ```shell
 git show git-annex:remote.log
 ```
+
+#### Debugging
+
+If the `datalad push` command doesn't work as expected, we can
+push with additional info on the individual steps:
+
+`datalad -l debug push --to r2`
+
+If you see something like `err: 'fatal: 'your-remote' does not appear to be a git repository`,
+you can ignore that.
+
+`datalad push --to r2 --data anything`
+
+`git-annex wanted r2`
+
+To check wether your file is in the git-annex branch:
+
+`git-annex whereis path/to/file`
+
+If nothing happens, your file is not in the annex branch. If you expect it to be in the git-annex
+go to `.gitattributes` and `.gitignore` to see which files are excluded / included.
+
+`git-annex fsck --from $r2_sibling_name --fast --all`
+
+fast means no download and checks if it's there
+-- quiet shows only the errors (no errors, no output)
