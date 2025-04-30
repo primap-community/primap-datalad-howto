@@ -475,7 +475,10 @@ To check wether your file is in the git-annex branch:
 If nothing happens, your file is not in the annex branch. If you expect it to be in the git-annex
 go to `.gitattributes` and `.gitignore` to see which files are excluded / included.
 
-`git-annex fsck --from $r2_sibling_name --fast --all`
+You can check the integrity of the files in the annex with:
+ 
+`git-annex fsck --from $r2_sibling_name --fast --all --quiet`
 
-fast means no download and checks if it's there
--- quiet shows only the errors (no errors, no output)
+`--fast` performs a quick check without downloading the files
+`-- quiet` shows only the errors (no errors, no output)
+`--all` runs the check on all files in the repository
