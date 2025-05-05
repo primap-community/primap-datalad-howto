@@ -8,7 +8,9 @@
       * [For internal developers](#for-internal-developers)
       * [For external collaborators](#for-external-collaborators)
    * [Create a new repository](#create-a-new-repository)
-   * [Move an existing repository to R2](#move-an-existing-repository-to-r2)
+   * [Move an existing datalad repository to R2](#move-an-existing-datalad-repository-to-r2)
+   * [Move an existing git repository to R2](#move-an-existing-git-repository-to-r2)
+   * [Add an existing R2 sibling to your local repository](#add-an-existing-r2-sibling-to-your-local-repository)
 
 ## Overview
 
@@ -124,7 +126,7 @@ public access:
    "Western Europe (WEUR)".
 8. For the "Default storage class", choose "Standard" (should be the default).
 9. Hit "Create bucket" at the bottom.
-10. The next steps are optional, and only necessary if you want public access to your
+10. The next steps (11., 12., 13.) are optional, and only necessary if you want public access to your
     repository.
 11. The bucket overview loads, here navigate to the "Settings" tab, there you find
     under the "Public Access" heading in the "R2.dev subdomain" section a button
@@ -142,7 +144,9 @@ cd $name
 where you replace `$name` by the dataset name like `unfccc-di`.
 
 Next, we'll add R2 as a sibling (i.e. publication target) to the new datalad repository.
-We have to use git-annex directly to do this. If you add a bucket with public access,
+We have to use git-annex directly to do this.
+
+If you add a bucket with **public access**,
 use:
 ```shell
 primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
@@ -152,6 +156,16 @@ git annex initremote public-r2 type=S3 encryption=none signature=v4 region=auto 
     host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com \
     publicurl=$publicurl
 ```
+
+If you add a bucket with **private access**, use:
+```shell
+primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
+git annex initremote r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
+    autoenable=true \
+    bucket=primap-datalad-$name \
+    host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com
+```
+
 where you replace `$name` by the dataset name like `unfccc-di` and `$publicurl` by the
 public URL you copied when creating the cloudflare R2 bucket. If you didn't copy it,
 you can find it on the bucket's page in the settings under the heading "Public Access"
@@ -183,9 +197,13 @@ Finally, push the dataset to github, which will automatically push to R2 as well
 because we configured it as a publication dependency.
 
 
-## Move an existing repository to R2
+## Move an existing datalad repository to R2
 
-To move an existing repository, first create the cloudflare R2 bucket and optionally enable
+This section refers to repositories that have already been initialised by datalad. 
+If you are using a repository that was previously only managed via git, take a look 
+at [Move an existing git repository to R2](#move-an-existing-git-repository-to-r2).
+
+To move an existing datalad repository, first create the cloudflare R2 bucket and optionally enable
 public access:
 1. Go to https://dash.cloudflare.com/
 2. Log in.
@@ -199,7 +217,7 @@ public access:
    "Western Europe (WEUR)".
 8. For the "Default storage class", choose "Standard" (should be the default).
 9. Hit "Create bucket" at the bottom.
-10. The next steps are optional, and only necessary if you want to maintain public 
+10. The next steps (11., 12., 13.) are optional, and only necessary if you want to maintain public 
     access to your repository.
 11. The bucket overview loads, here navigate to the "Settings" tab, there you find
     under the "Public Access" heading in the "R2.dev subdomain" section a button
@@ -208,8 +226,9 @@ public access:
 13. Copy the "Public R2.dev Bucket URL", you'll need it later.
 
 Now, we'll add R2 as a sibling (i.e. publication target) to the existing datalad repository.
-We have to use git-annex directly to do this. If you add a bucket with public access,
-use:
+We have to use git-annex directly to do this. 
+
+If you add a bucket with **public access**, use:
 ```shell
 primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
 git annex initremote public-r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
@@ -218,6 +237,15 @@ git annex initremote public-r2 type=S3 encryption=none signature=v4 region=auto 
     host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com \
     publicurl=$publicurl
 ```
+If you add a bucket with **private access**, use:
+```shell
+primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
+git annex initremote r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
+    autoenable=true \
+    bucket=primap-datalad-$name \
+    host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com
+```
+
 where you replace `$name` by the dataset name like `unfccc-di` and `$publicurl` by the
 public URL you copied when creating the cloudflare R2 bucket. If you didn't copy it,
 you can find it on the bucket's page in the settings under the heading "Public Access"
@@ -233,25 +261,36 @@ Now, the output of `datalad siblings` should look like this:
 .: ginhemio-storage(+) [https://gin.hemio.de/CR/unfcc_di_data (git)]
 .: ginhemio(+) [https://gin.hemio.de/CR/unfcc_di_data (git)]
 ```
+Your r2 remote will be called "public-r2" or "r2". 
 Note that your github sibling might not be named "origin" and you might not have
 the "datalad-archives" sibling at all and you might only have one of "ginhemio" and
-"ginhemio-storage". This all depends on the prior hosting history of the dataset and
+"ginhemio-storage".  This all depends on the prior hosting history of the dataset and
 might therefore differ between datasets. Important is only that you at this stage still
 have one ginhemio sibling and the github sibling.
 
 Now, we'll add a publication dependency on public-r2 to the github remote and remove
 the publication dependency on ginhemio:
 ```shell
-datalad siblings configure -s $github_sibling_name --publish-depends public-r2
+datalad siblings configure -s $github_sibling_name --publish-depends $r2_sibling_name
 ```
 Replace `$github_sibling_name` with the name of your github sibling (usually, `github`
-or `origin`).
+or `origin`). Replace `$r2_sibling_name` with the name of the R2 sibling (`public-r2` or `r2`).
 
-Now, push the dataset to github, which will automatically push to R2 as well
+**Option A: If we are confident that all the files are stored on disc**,
+we can **push** the dataset to github, which will automatically push to R2 as well,
 because we configured it as a publication dependency. This might take a while because
 it transfers all data:
+
 ```shell
 datalad push --to $github_sibling_name
+```
+**Option B: If some files are only on a remote** (they are broken symlinks on our local machine),
+we could either download and the upload again
+(`datalad get .` and `datalad push --to $github_sibling_name`) or we can use git-annex 
+directly to **copy** the files (faster for large data sets):
+
+```shell
+git annex copy --to $r2_sibling_name --from-anywhere --all
 ```
 
 Finally, remove the obsolete ginhemio siblings:
@@ -262,11 +301,104 @@ datalad siblings remove -s ginhemio-storage
 if you only have one ginhemio sibling, only remove this one. Also, we have to tell
 git-annex to never enable the storage sibling and not try to fetch data from ginhemio
 any more:
+
 ```shell
 git annex configremote ginhemio-storage autoenable=false
 git annex dead ginhemio-storage
 ```
+
 and push the results again:
+```shell
+datalad push --to $github_sibling_name
+```
+
+## Move an existing git repository to R2
+
+This section refers to repositories that have not been initialised by datalad. The process is very similar
+to the one for moving an existing datalad repository, but we have to initialise the dataset as well.
+
+To move an existing datalad repository, first create the cloudflare R2 bucket and optionally enable
+public access:
+1. Go to https://dash.cloudflare.com/
+2. Log in.
+3. If it asks, choose the account "Climate Resource".
+4. In the left menu, choose "R2 Object Storage".
+5. Press the blue "Create bucket" button.
+6. Use `primap-datalad-{name}` as the bucket name, where
+   you replace `{name}` by the dataset name like `unfccc-di`, so that the resulting
+   bucket name is something like `primap-datalad-unfccc-di`.
+7. For "Location", choose "Automatic" and provide a "location hint" for
+   "Western Europe (WEUR)".
+8. For the "Default storage class", choose "Standard" (should be the default).
+9. Hit "Create bucket" at the bottom.
+10. The next steps (11., 12., 13.) are optional, and only necessary if you want to maintain public 
+    access to your repository.
+11. The bucket overview loads, here navigate to the "Settings" tab, there you find
+    under the "Public Access" heading in the "R2.dev subdomain" section a button
+    "Allow access" - press it.
+12. Type "allow" to confirm that you want public access, then press "Allow" again.
+13. Copy the "Public R2.dev Bucket URL", you'll need it later.
+
+First, we need to initialise our dataset with:
+
+```shell
+datalad create -c text2git $name
+```
+If we expect to have large CSV files, we need to ensure that the CSV files are stored in the git-annex
+by adding this line to the `.gitattributes` file, which should be in the root directory of the repository:
+
+`*.csv annex.largefiles=anything`
+
+If the files we want to push to the R2 bucket are excluded by the `.gitignore` file, we need to
+remove the lines that exclude them.
+
+Now, we'll add R2 as a sibling (i.e. publication target) to the existing datalad repository.
+We have to use git-annex directly to do this.
+
+If you add a bucket with **public access**, use:
+```shell
+primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
+git annex initremote public-r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
+    autoenable=true \
+    bucket=primap-datalad-$name \
+    host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com \
+    publicurl=$publicurl
+```
+If you add a bucket with **private access**, use:
+
+```shell
+primap_datalad_creds  # skip if you set up your .bashrc to always inject the secrets
+git annex initremote r2 type=S3 encryption=none signature=v4 region=auto protocol=https \
+    autoenable=true \
+    bucket=primap-datalad-$name \
+    host=2aa5172b2bba093c516027d6fa13cdc8.r2.cloudflarestorage.com
+```
+
+where you replace `$name` by the dataset name like `unfccc-di` and `$publicurl` by the
+public URL you copied when creating the cloudflare R2 bucket. If you didn't copy it,
+you can find it on the bucket's page in the settings under the heading "Public Access"
+in the section "R2.dev subdomain" at the entry "Public R2.dev Bucket URL". Copy it fully,
+it should look something like `https://pub-lotsofcharacters.r2.dev`.
+
+Now, the output of `datalad siblings` should look like this:
+```
+.: here(+) [git]
+.: public-r2(+) [git]
+.: origin(-) [https://github.com/mikapfl/unfccc_di_data.git (git)]
+```
+Note that your github sibling might not be named "origin" and your r2 remote will be called "public-r2" or "r2".  
+
+Now, we'll add a publication dependency on r2 to the github remote:
+```shell
+datalad siblings configure -s $github_sibling_name --publish-depends $r2_sibling_name
+```
+Replace `$github_sibling_name` with the name of your github sibling (usually, `github`
+or `origin`). Replace `$r2_name` with the name of the R2 sibling (`public-r2` or `r2`).
+
+We can push the dataset to github, which will automatically push to R2 as well,
+because we configured it as a publication dependency. This might take a while because
+it transfers all data:
+
 ```shell
 datalad push --to $github_sibling_name
 ```
@@ -313,3 +445,32 @@ If we want to see the name of the bucket we can use:
 ```shell
 git show git-annex:remote.log
 ```
+
+#### Debugging
+
+If the `datalad push` command doesn't work as expected, we can
+push with additional info on the individual steps:
+
+`datalad -l debug push --to r2`
+
+If you see something like `err: 'fatal: 'your-remote' does not appear to be a git repository`,
+you can ignore that.
+
+`datalad push --to r2 --data anything`
+
+`git-annex wanted r2`
+
+To check wether your file is in the git-annex branch:
+
+`git-annex whereis path/to/file`
+
+If nothing happens, your file is not in the annex branch. If you expect it to be in the git-annex
+go to `.gitattributes` and `.gitignore` to see which files are excluded / included.
+
+You can check the integrity of the files in the annex with:
+ 
+`git-annex fsck --from $r2_sibling_name --fast --all --quiet`
+
+`--fast` performs a quick check without downloading the files
+`-- quiet` shows only the errors (no errors, no output)
+`--all` runs the check on all files in the repository
