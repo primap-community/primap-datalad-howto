@@ -284,7 +284,7 @@ it transfers all data:
 ```shell
 datalad push --to $github_sibling_name
 ```
-**Option B: If some files are only on a remote** (they are symlinks on our local machine),
+**Option B: If some files are only on a remote** (they are broken symlinks on our local machine),
 we could either download and the upload again
 (`datalad get .` and `datalad push --to $github_sibling_name`) or we can use git-annex 
 directly to **copy** the files (faster for large data sets):
@@ -315,7 +315,7 @@ datalad push --to $github_sibling_name
 ## Move an existing git repository to R2
 
 This section refers to repositories that have not been initialised by datalad. The process is very similar
-to the one for moving an existing datalad repository, but we have to do a initialise the dataset as well.
+to the one for moving an existing datalad repository, but we have to initialise the dataset as well.
 
 To move an existing datalad repository, first create the cloudflare R2 bucket and optionally enable
 public access:
