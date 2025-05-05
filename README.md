@@ -395,22 +395,14 @@ datalad siblings configure -s $github_sibling_name --publish-depends $r2_sibling
 Replace `$github_sibling_name` with the name of your github sibling (usually, `github`
 or `origin`). Replace `$r2_name` with the name of the R2 sibling (`public-r2` or `r2`).
 
-**Option A: If we are confident that all the files are stored on disc**,
-we can **push** the dataset to github, which will automatically push to R2 as well,
+We can push the dataset to github, which will automatically push to R2 as well,
 because we configured it as a publication dependency. This might take a while because
 it transfers all data:
 
 ```shell
 datalad push --to $github_sibling_name
 ```
-**Option B: If some files are only on a remote** (they are symlinks on our local machine),
-we could either download and the upload again
-(`datalad get .` and `datalad push --to $github_sibling_name`) or we can use git-annex 
-directly to **copy** the files (faster for large data sets):
 
-```shell
-git annex copy --to $r2_sibling_name --from-anywhere --all
-```
 ## Add an existing R2 sibling to your local repository
 
 If someone already set up the R2 remote, we still need 
