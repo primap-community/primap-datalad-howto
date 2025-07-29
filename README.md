@@ -127,8 +127,7 @@ public access:
 10. The next steps are optional, and only necessary if you want public access to your
     repository.
 11. The bucket overview loads, here navigate to the "Settings" tab, there you find
-    under the "Public Access" heading in the "R2.dev subdomain" section a button
-    "Allow access" - press it.
+    at the "Public Development URL" heading a button "Enable" - press it.
 12. Type "allow" to confirm that you want public access, then press "Allow" again.
 13. Copy the "Public R2.dev Bucket URL", you'll need it later.
 
